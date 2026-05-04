@@ -297,18 +297,76 @@ document.getElementById("status").innerText =
 }
 render();
 
-/* COPY FUNCTION */
+let copyCooldown = false;
+
 function copyCode(code, btn){
+if(copyCooldown) return;
+copyCooldown = true;
+
 navigator.clipboard.writeText(code);
 
-let old = btn.innerText;
-btn.innerText = "✓";
+/* BEEP SOUND */
+try{
+let ctx = new (window.AudioContext || window.webkitAudioContext)();
+let osc = ctx.createOscillator();
+let gain = ctx.createGain();
 
+osc.type = "sine";
+osc.frequency.value = 880; // tone
+
+gain.gain.value = 0.05;
+
+osc.connect(gain);
+gain.connect(ctx.destination);
+
+osc.start();
+osc.stop(ctx.currentTime + 0.08);
+}catch(e){}
+
+/* fallback safety */
+if(!btn) return;
+
+let oldText = btn.innerText;
+let oldBg = btn.style.background;
+
+btn.innerText = "✓";
 btn.style.background = "linear-gradient(135deg,#22c55e,#16a34a)";
 
+/* TOAST */
+let toast = document.createElement("div");
+toast.innerText = "Copied: " + code;
+toast.style.position = "fixed";
+toast.style.bottom = "30px";
+toast.style.left = "50%";
+toast.style.transform = "translateX(-50%)";
+toast.style.background = "rgba(0,0,0,0.8)";
+toast.style.color = "white";
+toast.style.padding = "10px 16px";
+toast.style.borderRadius = "10px";
+toast.style.zIndex = "9999";
+toast.style.backdropFilter = "blur(10px)";
+toast.style.border = "1px solid rgba(255,255,255,0.1)";
+toast.style.opacity = "0";
+toast.style.transition = "0.2s";
+
+document.body.appendChild(toast);
+
+setTimeout(()=>toast.style.opacity="1",10);
+
+/* vibration (mobile) */
+if(navigator.vibrate){
+navigator.vibrate(80);
+}
+
+/* reset */
 setTimeout(()=>{
-btn.innerText = old;
-btn.style.background = "linear-gradient(135deg,#3b82f6,#2563eb)";
+btn.innerText = oldText;
+btn.style.background = oldBg;
+
+toast.style.opacity = "0";
+setTimeout(()=>toast.remove(),200);
+
+copyCooldown = false;
 },1200);
 }
 
